@@ -7,20 +7,21 @@
     for the current month.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
+from functools import partial
 
 import pandas as pd
 
+from .scalar import first_of, end_of
+
 __all__ = [
-    'day_range',
-    'date_range',
-    'month_range',
-    'quarter_range'
+    'day_range', 'date_range',
+    'week_range', 'month_range','quarter_range', 'year_range',
 ]
 
 def day_range(num_days, anchor_date=None, inclusive=True):
     """
-    Returns a :class:`DatetimeIndex` object spanning the specified number of 
+    Returns a range of dates spanning the specified number of 
     days.
 
     :param num_days: Number of days to move forward (or backwards if negative) 
@@ -56,14 +57,26 @@ def day_range(num_days, anchor_date=None, inclusive=True):
 
 def date_range(dt=None, freq='m', full_range=True):
     """
-    Generic date range function. Also called by `month_range` and 
-    `quarter_range`.
+    Returns a date range for the specified frequency e.g. all the 
+    dates in a particular month or quarter.
+
+    :param dt: Datetime that determines the time period to use
+    :param freq: Frequency of the time period e.g. 'w', 'm' or 'q'
+    :param full_range: If `True` will return a date range for the 
+                        entire period. Otherwise, it will return a 
+                        date range from the first of the period up 
+                        to `dt`.
     """
 
     if dt is None:
         dt = datetime.now()
 
-    start_date = _first_of(freq=freq, dt=dt)
-    end_date = _end_of(freq=freq, dt=dt) if full_range else dt
+    start_date = first_of(dt=dt, freq=freq)
+    end_date = end_of(dt=dt, freq=freq) if full_range else dt
 
     return pd.date_range(start_date, end_date, normalize=True)
+
+week_range = partial(date_range, freq='w')
+month_range = partial(date_range, freq='m')
+quarter_range = partial(date_range, freq='q')
+year_range = partial(date_range, freq='y')
