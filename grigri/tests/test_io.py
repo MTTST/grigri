@@ -61,7 +61,7 @@ class TestReadFrame(unittest.TestCase):
         mock_cursor = mock.Mock()
         mock_cursor.execute.return_value = None
         mock_cursor.fetchall.return_value = []
-        mock_cursor.description = {}
+        mock_cursor.description = []
         mock_conn.cursor.return_value = mock_cursor
 
         df = read_frame('asdf', mock_conn)
@@ -85,7 +85,7 @@ class TestReadFrame(unittest.TestCase):
         mock_cursor = mock.Mock()
         mock_cursor.execute.return_value = None
         mock_cursor.fetchall.return_value = []
-        mock_cursor.description = {}
+        mock_cursor.description = []
         mock_conn.cursor.return_value = mock_cursor
 
         df = read_frame('select top 10', mock_conn, 'office')
@@ -96,8 +96,18 @@ class TestReadFrame(unittest.TestCase):
         mock_cursor = mock.Mock()
         mock_cursor.execute.return_value = None
         mock_cursor.fetchall.return_value = []
-        mock_cursor.description = {}
+        mock_cursor.description = []
         mock_conn.cursor.return_value = mock_cursor
 
         df = read_frame('select top 10', mock_conn)
         mock_cursor.execute.assert_called_with('select top 10')
+
+    def test_read_frame_raises_on_duplicate_columns(self):
+        mock_conn = mock.Mock()
+        mock_cursor = mock.Mock()
+        mock_cursor.execute.return_value = None
+        mock_cursor.fetchall.return_value = []
+        mock_cursor.description = [('A',),('A')]
+        mock_conn.cursor.return_value = mock_cursor
+
+        self.assertRaises(AssertionError, read_frame, 'select top 10', mock_conn)

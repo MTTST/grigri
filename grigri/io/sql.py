@@ -3,7 +3,8 @@
     grigri.io.sql
     ~~~~~~~~~~~~~
 
-    Methods for reading and writing to SQL
+    Methods that facilitate data retrieval and writing to a 
+    SQL database.
 """
 
 from datetime import datetime, date
@@ -12,14 +13,18 @@ import decimal
 import pandas as pd
 
 
-def read_frame(sql, conn, params=None, coerce=True):
+def read_frame(sql, conn, params=None, coerce_default=True, coerce_ascii=False,
+               squeeze=False):
     """
     Returns a DataFrame from the result set of a SQL statement.
 
     :param sql: SQL statement to execute
     :param conn: Valid database connection 
     :param params: List of parameters to feed into a parameterized query.
-    :param coerce: Coerce columns to the same datatype as in SQL
+    :param coerce_default: Coerce columns to the default datatype specified in 
+                           the metadata of the SQL table.
+    :param coerce_ascii: Remove non-ascii charaters from string type columns.
+    :param squeeze: Attempt to reduce DataFrame into a Series if possible.
 
     .. note ::
         The `pandas` library has its own `read_frame` function that you can 
@@ -37,17 +42,26 @@ def read_frame(sql, conn, params=None, coerce=True):
         cursor.execute(sql)
     
     rows = cursor.fetchall()
-
-    # mapping of column name -> column data type
-    column_types = {col[0]: col[1] for col in cursor.description}
     columns = [col[0] for col in cursor.description]
+
+    # https://github.com/jephdo/grigri/issues/1
+    assert len(list(columns)) == len(set(columns)), 'There are duplicate column names in the SQL statement.'
 
     cursor.close()
     conn.commit()
 
     result = pd.DataFrame.from_records(rows, columns=columns)
 
-    return coerce_dtypes(result, column_types)
+    if coerce_default:
+        # mapping of column name -> column data type
+        column_types = {col[0]: col[1] for col in cursor.description}
+        result = coerce_dtypes(result, column_types)
+
+    # TODO: not really sure the best way to encode ascii
+    if coerce_ascii:
+        pass
+    
+    return result
 
 def coerce_dtypes(frame, columns):
     """
@@ -67,7 +81,6 @@ def coerce_dtypes(frame, columns):
     for col, dtype in columns.items():
         if dtype in [datetime, date]:
             frame[col] = pd.to_datetime(frame[col])
-
         elif dtype is int:
             try:
                 frame[col] = frame[col].astype(int)
