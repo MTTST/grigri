@@ -10,6 +10,7 @@
 from datetime import datetime, date
 import decimal
 
+import numpy as np
 import pandas as pd
 
 
@@ -57,7 +58,7 @@ def read_frame(sql, conn, params=None, coerce_default=True, coerce_ascii=False,
         column_types = {col[0]: col[1] for col in cursor.description}
         result = coerce_dtypes(result, column_types)
 
-    # TODO: not really sure the best way to encode ascii
+    # TODO: not really sure the best way to encode ascii yet
     if coerce_ascii:
         pass
     
@@ -76,11 +77,16 @@ def coerce_dtypes(frame, columns):
     .. note ::
         Both date and datetime columns are converted to the native pandas 
         `timestamp` datatype
+    .. warning :: 
+        There are no native NaN's for boolean types, SQL NULL's will be converted
+        to False.
     """
 
     for col, dtype in columns.items():
         if dtype in [datetime, date]:
             frame[col] = pd.to_datetime(frame[col])
+        elif dtype is bool:
+            frame[col] = np.bool_(frame[col])
         elif dtype is int:
             try:
                 frame[col] = frame[col].astype(int)
