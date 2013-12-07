@@ -21,9 +21,9 @@ def is_null(*args):
     for k in args:
         if not pd.isnull(k):
             return k
-    else:
-        # if everything is null then return the last argument
-        return args[-1]
+
+    # if everything is null then return the last argument
+    return args[-1]
 
 def is_numeric(n):
     """

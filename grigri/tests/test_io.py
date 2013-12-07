@@ -51,6 +51,17 @@ class TestDataTypeCoercion(unittest.TestCase):
 
         self.assertEqual(result, expected)
 
+    def test_coerce_dtype_converts_bool(self):
+        df = pd.DataFrame([True, None, False], columns=['bool'])
+
+        casted_df = coerce_dtypes(df, {'bool': bool})
+        result = casted_df.dtypes.to_dict()
+        expected = {'bool': 'bool'}
+
+        # make sure None is casted to False
+        self.assertEqual(casted_df['bool'].sum(), 1)
+        self.assertEqual((~casted_df['bool']).sum(), 2)
+
 
 class TestReadFrame(unittest.TestCase):
     def setUp(self):
