@@ -96,7 +96,7 @@ def split_tseries(frame, split_date=None):
         Keep in mind that rows on the same day as `split_date` will be in the 
         "past" DataFrame.
     """
-    
+
     if split_date is None:
         split_date = datetime.now()
     
@@ -107,8 +107,15 @@ def split_tseries(frame, split_date=None):
     
     return split_frame[:split_date], split_frame[split_date:]
 
+def count_timestamps(series, freq='d'):
+    assert series.dtype == '<M8[ns]', "Series must have datetime64 datatype"
+
+    tseries = pd.Series(1, index=series)
+
+    return tseries.resample(freq, how='sum')
+
 def resample_reindex(tseries, new_index, freq='d', how='mean',
-                     fill_value=np.nan):
+                     fill_value=None):
     """
     Performs a pandas :func:`resample` and :func:`reindex` at the same time. 
 
@@ -118,9 +125,12 @@ def resample_reindex(tseries, new_index, freq='d', how='mean',
 
     It is functionally equivalent to::
 
-        df.resample(freq, how).reindex(date_range)
+        tseries.resample(freq, how).reindex(new_index)
     """
 
-    tseries = tseries.resample(freq, how=how)
+    tseries = tseries.resample(freq, how=how).reindex(new_index)
+
+    if fill_value is not None:
+        tseries = tseries.fillna(fill_value)
     
-    return tseries.reindex(reindex).fillna(fill_value)
+    return tseries

@@ -100,3 +100,50 @@ def coerce_dtypes(frame, columns):
             frame[col] = frame[col].astype(float)
 
     return frame
+
+def write_frame(frame, conn, table, clear_table=False):
+    """ 
+    Writes a DataFrame object to a SQL database table.
+
+    :param frame: Target DataFrame to write to SQL
+    :param conn: Database connection object to use.
+    :param table: Name of SQL table to write to.
+    :param clear_table: If `True`, will delete all rows in `table` before 
+                        writing.
+
+    .. warning ::
+        Be careful which ODBC library you use when feeding in `conn`. It is 
+        recommended that you use ceODBC for doing inserts to tables. 
+        
+        Previously we used the pyodbc library, but suffered huge write performance problems 
+        because pyodbc wasn't correctly handling bulk inserts. See:
+        http://stackoverflow.com/questions/5693885/pyodbc-very-slow-bulk-insert-speed
+
+    """
+    # assert isinstance(conn, ceODBC.Connection), 'Connection object must use the ceODBC module for writing'
+
+    cursor = conn.cursor()
+    try:
+        if clear_table:
+            cursor.execute('TRUNCATE TABLE [%s]' % table)
+
+        safe_columns = ['[' + col.replace(' ','_').strip() + ']' 
+                        for col in frame.columns]
+        columns = ','.join(safe_columns)
+        wildcards = ','.join(['?'] * len(safe_columns))
+
+        insert_query = 'INSERT INTO %s (%s) VALUES (%s)' % (table, columns, wildcards)
+
+        # Have to replace any kind of NaN types to None because SQL
+        # only understands how to interpret None.
+        data = []
+        for x in frame.values:
+            row = [None if pd.isnull(i) else i for i in x]
+            cursor.execute(insert_query, row)
+
+        # cursor.executemany(insert_query, data)
+    except pyodbc.Error:
+        raise
+    else:
+        cursor.close()
+        conn.commit()
