@@ -24,6 +24,7 @@ def squeeze(frame):
         return frame.ix[:,0]
 
     if num_columns == 2:
+        pass
         # first detect any datetime cols
 
 
