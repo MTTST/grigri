@@ -16,8 +16,8 @@ import pandas as pd
 from .scalar import first_of, end_of
 
 __all__ = [
-    'day_range', 'date_range',
-    'week_range', 'month_range','quarter_range', 'year_range',
+    'date_range', 'week_range', 'month_range','quarter_range', 'year_range',
+    'swing_range', 'day_swing', 'week_swing', 'month_swing', 'year_swing'
 ]
 
 freq_map = {
@@ -76,21 +76,22 @@ def swing_range(periods, anchor_date=None, freq='d', inclusive=True):
     if anchor_date is None:
         anchor_date = datetime.now()
     
-    swing_date = anchor_date + relativedelta(**{freq_name: periods})
-
     shift = 1 if periods > 0 else -1
-
-    swing_date = anchor_date + relativedelta(**{freq_name: periods - shift})
-
+    
     if not inclusive:
         anchor_date += relativedelta(**{freq_name: shift})
-        swing_date += relativedelta(**{freq_name: shift})
+    
+    swing_date = anchor_date + relativedelta(**{freq_name: periods})
 
     if anchor_date > swing_date:
-        anchor_date, swing_date = swing_date, anchor_date 
+        anchor_date, swing_date = swing_date, anchor_date
+
+    if freq != 'd':
+        swing_date = end_of(swing_date, freq=freq) if periods >= 0 else first_of(swing_date, freq=freq)
 
     return pd.date_range(anchor_date, swing_date, normalize=True, freq=freq)
 
 day_swing = partial(swing_range, freq='d')
 week_swing = partial(swing_range, freq='w')
 month_swing = partial(swing_range, freq='m')
+year_swing = partial(swing_range, freq='y')

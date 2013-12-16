@@ -42,8 +42,10 @@ def read_frame(sql, conn, params=None, coerce_default=True, coerce_ascii=False,
     else:
         cursor.execute(sql)
     
+    description = cursor.description
+    
     rows = cursor.fetchall()
-    columns = [col[0] for col in cursor.description]
+    columns = [col[0] for col in description]
 
     # https://github.com/jephdo/grigri/issues/1
     assert len(list(columns)) == len(set(columns)), 'There are duplicate column names in the SQL statement.'
@@ -55,7 +57,7 @@ def read_frame(sql, conn, params=None, coerce_default=True, coerce_ascii=False,
 
     if coerce_default:
         # mapping of column name -> column data type
-        column_types = {col[0]: col[1] for col in cursor.description}
+        column_types = {col[0]: col[1] for col in description}
         result = coerce_dtypes(result, column_types)
 
     # TODO: not really sure the best way to encode ascii yet

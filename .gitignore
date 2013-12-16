@@ -2,7 +2,6 @@
 
 *.ipynb
 MANIFEST
-setup.py
 
 # C extensions
 *.so
