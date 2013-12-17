@@ -6,9 +6,12 @@
     Miscellaneous functions for dealing with type-checking.
 """
 
+from datetime import datetime, date
+
 import pandas as pd
 
 from dateutil.parser import parse
+
 
 def is_null(*args):
     """
