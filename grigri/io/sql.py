@@ -141,10 +141,11 @@ def write_frame(frame, conn, table, clear_table=False):
         data = []
         for x in frame.values:
             row = [None if pd.isnull(i) else i for i in x]
-            cursor.execute(insert_query, row)
+            data.append(row)
+            # cursor.execute(insert_query, row)
 
-        # cursor.executemany(insert_query, data)
-    except pyodbc.Error:
+        cursor.executemany(insert_query, data)
+    except Exception:
         raise
     else:
         cursor.close()

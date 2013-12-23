@@ -100,10 +100,10 @@ def split_tseries(frame, split_date=None):
     if split_date is None:
         split_date = datetime.now()
     
-    split_date = dates.strip_time(split_date)
+    split_date = strip_time(split_date)
     
     # datetimeindex has to be sorted before slicing
-    split_frame = data_frame.sort_index()
+    split_frame = frame.sort_index()
     
     return split_frame[:split_date], split_frame[split_date:]
 
