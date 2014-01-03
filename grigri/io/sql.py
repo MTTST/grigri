@@ -92,7 +92,7 @@ def coerce_dtypes(frame, columns):
         elif dtype is int:
             try:
                 frame[col] = frame[col].astype(int)
-            except ValueError:
+            except (TypeError, ValueError):
                 # there is no native integer type for NaN,
                 # so if there are any NULL's in an integer 
                 # column you have to cast to float:

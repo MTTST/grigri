@@ -39,17 +39,20 @@ def group_resample(frame, date_column, groupby=None, level=None,
         aggregation step, it will call :func:`stack` to reduce the result into a 
         Series.
     """
-    
+
+    is_series = isinstance(frame, pd.Series)
+
     # if no value column is supplied to aggregate, make sure resampling
     # just counts the number of timestamps
-    if value_column is None:
+    if value_column is None and not is_series:
         value_column = date_column
         how = 'count'
 
     grouped = frame.groupby(by=groupby, level=level, squeeze=True)
 
     def f(chunk):
-        chunk = chunk.set_index(date_column, drop=False)[value_column]
+        if not is_series:
+            chunk = chunk.set_index(date_column, drop=False)[value_column]
         return chunk.resample(freq, how=how)
 
     result = grouped.apply(f)
