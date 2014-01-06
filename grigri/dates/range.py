@@ -86,6 +86,11 @@ def swing_range(periods, anchor_date=None, freq='d', inclusive=True):
     if anchor_date > swing_date:
         anchor_date, swing_date = swing_date, anchor_date
 
+    # For weeks, months, yrs, you have to deal with
+    # the end or the beginning of the interval depending on
+    # if you are moving forwards or backwards in time.
+    # You don't have to worry about days because the time component will be
+    # stripped when you normalize in `date_range`
     if freq != 'd':
         swing_date = end_of(swing_date, freq=freq) if periods >= 0 else first_of(swing_date, freq=freq)
 

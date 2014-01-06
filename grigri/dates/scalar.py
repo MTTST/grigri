@@ -7,14 +7,18 @@
     a string, numeric or date value.
 """
 
-from datetime import datetime
-
+from datetime import datetime, timedelta
 from functools import partial
+
+from dateutil.parser import parse
+from dateutil.relativedelta import relativedelta
 
 import pandas as pd
 from pandas.tseries.offsets import (Week, MonthEnd, QuarterEnd, YearEnd, 
                                     DateOffset, MonthBegin, QuarterBegin,
                                     YearBegin)
+
+from . import FREQUENCY_MAP
 
 
 __all__ = [
@@ -23,7 +27,8 @@ __all__ = [
     'first_of_year',
     'end_of', 'end_of_week', 'end_of_month', 'end_of_quarter', 
     'end_of_year',
-    'prorate'
+    'prorate', 'is_current',
+    'date_diff', 'date_add'
 ]
 
 def strip_time(dt):
@@ -138,3 +143,88 @@ def prorate(dt=None, freq='m'):
 
     return (numerator.days + 1) / len(days)
 
+def date_diff(dt1, dt2, freq='d'):
+    """ 
+    Returns the difference of two dates based on the given frequency.
+
+    :param dt1: datetime or string representing a datetime.
+    :param dt2: datetime or string representing a datetime.
+    :param freq: Time frequency to calculate the datetime frequency between
+                 `dt1` and `dt2`
+
+    .. note::
+        For week difference calculations, a week is defined as the range
+        from Monday to Sunday.
+
+    >>> date_diff('7-22-2013', '8-4-2013')
+    -13
+    >>> date_diff('7-22-2013', '8-4-2013', freq='w')
+    -1
+    """
+
+    if isinstance(dt1, str):
+        dt1 = parse(dt1)
+    if isinstance(dt2, str):
+        dt2 = parse(dt2)
+
+    # timedelta in datetime module doesn't have a nice datediff for months
+    # so I use dateutil.relativedelta library here:
+    diff = relativedelta(dt1, dt2)
+
+    if freq == 'd':
+        return diff.days
+
+    elif freq == 'm':
+        assert dt1.year > 0 and dt2.year > 0
+        month1 = dt1.month + dt1.year * 12
+        month2 = dt2.month + dt2.year * 12
+        return month1 - month2
+    # dateutil.relativedelta doesn't do weeks
+    # so I use timedelta module in datetime here:
+    elif freq == 'w':
+        # normalize both dates by converting them to the monday in their 
+        # respective week
+        monday1 = (dt1 - timedelta(days=dt1.weekday()))
+        monday2 = (dt2 - timedelta(days=dt2.weekday()))
+
+        return (monday1 - monday2).days / 7
+
+    elif freq in ('a', 'y'):
+        return diff.years
+
+    raise ValueError('Unknown freq format "{}". Can only take "d", "m", "w" or "y"'
+        .format(freq))
+
+def date_add(periods, freq='d', anchor_date=None):
+    """
+    Add a specified number of days, weeks, or months to a date.
+
+    :param periods: Number of periods (e.g. days, weeks, months) to add to 
+                    `anchor_date`. Can also be negative.
+    :param freq: Frequency of the period ('d', 'w', 'm',...)
+    :param anchor_date: Date to add periods to.
+    """
+
+    if anchor_date is None:
+        anchor_date = datetime.now()
+
+    frequency_name = FREQUENCY_MAP[freq]
+
+    return anchor_date + relativedelta(**{frequency_name: periods})
+
+def is_current(dt, freq='m'):
+    """
+    Checks if a date is in the current month, quarter or year.
+
+    >>> datetime.now()
+    datetime.datetime(2013, 9, 26, 16, 3, 7, 130000)
+    >>> is_current(datetime(2013,9,26))
+    True
+    """
+
+    # ideally would use `date_range` function in .range module, but that would 
+    # lead to a circular import...
+    dt_range = pd.date_range(first_of(dt, freq), end_of(dt,freq),
+                             normalize=True, freq='d')
+
+    return dt in dt_range
