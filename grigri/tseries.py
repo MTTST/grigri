@@ -111,7 +111,7 @@ def split_tseries(frame, split_date=None):
     return split_frame[:split_date], split_frame[split_date:]
 
 def count_timestamps(series, freq='d'):
-    assert series.dtype == '<M8[ns]', "Series must have datetime64 datatype"
+    assert series.dtype == 'datetime64[ns]', "Series must have datetime64 datatype"
 
     tseries = pd.Series(1, index=series)
 
