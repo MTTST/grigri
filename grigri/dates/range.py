@@ -83,18 +83,26 @@ def swing_range(periods, anchor_date=None, freq='d', inclusive=True):
     
     swing_date = anchor_date + relativedelta(**{freq_name: periods})
 
-    if anchor_date > swing_date:
-        anchor_date, swing_date = swing_date, anchor_date
-
     # For weeks, months, yrs, you have to deal with
     # the end or the beginning of the interval depending on
     # if you are moving forwards or backwards in time.
     # You don't have to worry about days because the time component will be
     # stripped when you normalize in `date_range`
     if freq != 'd':
-        swing_date = end_of(swing_date, freq=freq) if periods >= 0 else first_of(swing_date, freq=freq)
+        anchor_date = end_of(anchor_date, freq=freq)
+        swing_date = end_of(swing_date, freq=freq)
 
-    return pd.date_range(anchor_date, swing_date, normalize=True, freq=freq)
+    if anchor_date > swing_date:
+        anchor_date, swing_date = swing_date, anchor_date
+
+    result = pd.date_range(anchor_date, swing_date, normalize=True, freq=freq)
+
+    # this forces the result to return ONLY n number of periods. 
+    # sometimes pandas' date_range generates an extra date.
+    if periods > 0:
+        return result[:periods]
+    else:
+        return result[periods:]
 
 day_swing = partial(swing_range, freq='d')
 week_swing = partial(swing_range, freq='w')

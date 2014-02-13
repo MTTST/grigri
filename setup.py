@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='grigri',
-    version='0.05',
+    version='0.07',
     description='Extra tools and utilities for doing data analysis with numpy, pandas, etc.',
     url='http://github.com/jephdo/grigri/',
     author='Jeph Do',
